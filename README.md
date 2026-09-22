@@ -292,5 +292,5 @@ Las capturas de pantalla están guardadas en
 
 ## Video de exposición
 
-**Video público de YouTube:** _Por agregar. El enlace se incluirá una
-vez publicado en YouTube._
+**Video público de YouTube:** 
+Link del video en youtube: https://youtu.be/Kfo5Ma2AcPE
