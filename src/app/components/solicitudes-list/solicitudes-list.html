@@ -3,7 +3,7 @@
   <div class="historial-card">
     <div class="card-header">
       <div class="header-text-group">
-        <h3 class="card-title">Historial de Solicitudes</h3>
+        <h3 class="card-title">{{ titulo() }}</h3>
       </div>
 
       <div class="header-badge-group">
@@ -11,6 +11,9 @@
         <span class="count-badge">{{ solicitudes().length }} Solicitudes</span>
       </div>
     </div>
+
+    <p *ngIf="mensajeAccion()" class="action-feedback action-feedback--ok">{{ mensajeAccion() }}</p>
+    <p *ngIf="mensajeAccionError()" class="action-feedback action-feedback--error">{{ mensajeAccionError() }}</p>
 
     <!-- Tabla de Solicitudes Académicas -->
     <div class="table-responsive">
@@ -81,12 +84,33 @@
               </div>
             </td>
 
-            <!-- 6. Detalle (Acción interactiva para modal) -->
+            <!-- 6. Detalle y acciones -->
             <td class="col-detalle">
-              <button type="button" class="detail-action-btn" (click)="abrirDetalle(solicitud)"
-                title="Ver detalle completo de {{ solicitud.codigoRadicado }}">
-                Ver más
-              </button>
+              <div class="detalle-actions">
+                <button type="button" class="detail-action-btn" (click)="abrirDetalle(solicitud)"
+                  title="Ver detalle completo de {{ solicitud.codigoRadicado }}">
+                  Ver más
+                </button>
+                <button
+                  *ngIf="puedeGestionarSolicitudes()"
+                  type="button"
+                  class="detail-action-btn detail-action-btn--secondary"
+                  (click)="abrirEdicion(solicitud)"
+                  title="Editar estado de {{ solicitud.codigoRadicado }}"
+                >
+                  Editar
+                </button>
+                <button
+                  *ngIf="authService.isAdmin()"
+                  type="button"
+                  class="detail-action-btn detail-action-btn--danger"
+                  (click)="eliminarSolicitud(solicitud)"
+                  [disabled]="eliminandoId() === solicitud.id"
+                  title="Eliminar {{ solicitud.codigoRadicado }}"
+                >
+                  {{ eliminandoId() === solicitud.id ? 'Eliminando…' : 'Eliminar' }}
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -118,6 +142,111 @@
   </div>
 </section>
 
-<!-- Modal de Detalle de Solicitud -->
-<app-solicitud-detalle-modal [solicitud]="solicitudSeleccionada()"
-  (cerrar)="cerrarDetalle()"></app-solicitud-detalle-modal>
+<div
+  *ngIf="solicitudEnEdicion() as solicitudEdit"
+  class="detalle-modal-backdrop"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="editar-solicitud-titulo"
+  (click)="cerrarEdicion()"
+>
+  <div class="detalle-modal detalle-modal--compact" (click)="$event.stopPropagation()">
+    <div class="detalle-modal-header">
+      <h4 class="detalle-modal-title" id="editar-solicitud-titulo">Editar solicitud</h4>
+      <button type="button" class="detalle-modal-close" (click)="cerrarEdicion()" aria-label="Cerrar">
+        &times;
+      </button>
+    </div>
+
+    <div class="detalle-modal-body">
+      <p class="editar-resumen"><strong>{{ solicitudEdit.codigoRadicado }}</strong> — {{ solicitudEdit.tipoTramite }}</p>
+      <label class="editar-label" for="estado-solicitud">Estado</label>
+      <select
+        id="estado-solicitud"
+        class="editar-select"
+        [value]="estadoEnEdicion()"
+        (change)="estadoEnEdicion.set($any($event.target).value)"
+      >
+        <option *ngFor="let e of estadosDisponibles" [value]="e">{{ e }}</option>
+      </select>
+    </div>
+
+    <div class="detalle-modal-footer">
+      <button type="button" class="detalle-modal-btn detalle-modal-btn--muted" (click)="cerrarEdicion()" [disabled]="guardandoEdicion()">
+        Cancelar
+      </button>
+      <button type="button" class="detalle-modal-btn" (click)="guardarEdicion()" [disabled]="guardandoEdicion()">
+        {{ guardandoEdicion() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div
+  *ngIf="solicitudSeleccionada() as solicitud"
+  class="detalle-modal-backdrop"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-labelledby]="'detalle-titulo-' + solicitud.id"
+  (click)="cerrarDetalle()"
+>
+  <div class="detalle-modal" (click)="$event.stopPropagation()">
+    <div class="detalle-modal-header">
+      <h4 class="detalle-modal-title" [id]="'detalle-titulo-' + solicitud.id">
+        Detalle de solicitud
+      </h4>
+      <button type="button" class="detalle-modal-close" (click)="cerrarDetalle()" aria-label="Cerrar">
+        &times;
+      </button>
+    </div>
+
+    <div class="detalle-modal-body">
+      <dl class="detalle-list">
+        <div class="detalle-row">
+          <dt>Código solicitud</dt>
+          <dd>{{ solicitud.codigoRadicado }}</dd>
+        </div>
+        <div class="detalle-row">
+          <dt>Trámite académico</dt>
+          <dd>{{ solicitud.tipoTramite }}</dd>
+        </div>
+        <div class="detalle-row" *ngIf="solicitud.descripcionDetalle">
+          <dt>Descripción</dt>
+          <dd>{{ solicitud.descripcionDetalle }}</dd>
+        </div>
+        <div class="detalle-row">
+          <dt>Fecha radicación</dt>
+          <dd>{{ solicitud.fechaRadicacion }}</dd>
+        </div>
+        <div class="detalle-row">
+          <dt>Estado</dt>
+          <dd>{{ solicitud.estado }}</dd>
+        </div>
+        <div class="detalle-row">
+          <dt>Código alumno</dt>
+          <dd>{{ solicitud.estudiante.codigo }}</dd>
+        </div>
+        <div class="detalle-row">
+          <dt>Nombre alumno</dt>
+          <dd>{{ solicitud.estudiante.nombre }}</dd>
+        </div>
+        <div class="detalle-row">
+          <dt>Carrera</dt>
+          <dd>{{ solicitud.estudiante.carrera }}</dd>
+        </div>
+        <div class="detalle-row">
+          <dt>Correo</dt>
+          <dd>{{ solicitud.estudiante.email }}</dd>
+        </div>
+        <div class="detalle-row detalle-row--block">
+          <dt>Justificación</dt>
+          <dd>{{ solicitud.justificacion }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="detalle-modal-footer">
+      <button type="button" class="detalle-modal-btn" (click)="cerrarDetalle()">Cerrar</button>
+    </div>
+  </div>
+</div>

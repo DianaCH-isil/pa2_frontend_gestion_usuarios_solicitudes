@@ -10,7 +10,9 @@ import {
 } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { SolicitudesService } from '../../services/solicitudes.service';
-import { Estudiante, NuevaSolicitudDTO } from '../../models/solicitud.model';
+import { AuthService } from '../../services/auth.service';
+import { homeForRole } from '../../guards/role.guard';
+import { NuevaSolicitudDTO } from '../../models/solicitud.model';
 
 /**
  * Validador personalizado ES6+: Verifica que el correo pertenezca al dominio institucional (@isil.pe o @isil.edu.pe)
@@ -55,27 +57,22 @@ function validadorSinEspaciosVacios(control: AbstractControl): ValidationErrors 
   styleUrl: './solicitud-form.scss'
 })
 export class SolicitudForm implements OnInit {
+  // Servicios inyectados (todos private; se usan en código TS, no en template)
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
   protected readonly solicitudesService = inject(SolicitudesService);
 
-  // Formulario Reactivo
-  protected solicitudForm!: FormGroup;
-
-  // Código correlativo calculado
-  protected proximoRadicado = signal<string>('');
-
-  // Notificación de éxito
-  protected mensajeExito = signal<string | null>(null);
-
-  // Estado de envío en curso
-  protected guardando = signal<boolean>(false);
-
-  // Estudiante detectado automáticamente a partir del código ingresado
-  protected estudianteDetectado = signal<Estudiante | null>(null);
+  // Estado del formulario (público para acceso desde el template)
+  public solicitudForm!: FormGroup;
+  public proximoRadicado = signal<string>('');
+  public mensajeExito = signal<string | null>(null);
+  public mensajeError = signal<string | null>(null);
+  public errorCarga = signal<string | null>(null);
+  public guardando = signal<boolean>(false);
 
   // Opciones de trámites curriculares
-  protected readonly listaTramites = [
+  public readonly listaTramites = [
     'Revisión de Calificación Final',
     'Cancelación Extemporánea',
     'Homologación de Créditos',
@@ -87,12 +84,20 @@ export class SolicitudForm implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.proximoRadicado.set(this.solicitudesService.generarProximoRadicado());
-    this.inicializarFormulario();
+    try {
+      this.proximoRadicado.set(this.solicitudesService.generarProximoRadicado());
+      this.inicializarFormulario();
+    } catch (err) {
+      console.error('[SolicitudForm] Error al inicializar:', err);
+      this.errorCarga.set('Error al inicializar el formulario: ' + (err as Error).message);
+    }
   }
 
   private inicializarFormulario(): void {
-    const estudianteActual = this.solicitudesService.getEstudianteActual();
+    // Pre-llenar el email con el correo del usuario en sesión.
+    // Los estudiantes obtienen su propio correo; admin/personal lo dejan vacío.
+    const currentUser = this.authService.currentUser();
+    const emailPorDefecto = currentUser?.correo ?? '';
 
     this.solicitudForm = this.fb.group({
       codigoRadicado: [{ value: this.proximoRadicado(), disabled: true }],
@@ -107,7 +112,7 @@ export class SolicitudForm implements OnInit {
         ]
       ],
       estudianteCodigo: [
-        estudianteActual.codigo,
+        '',
         [
           Validators.required,
           Validators.pattern(/^(ISIL-\d{6}|\d{8})$/),
@@ -115,7 +120,7 @@ export class SolicitudForm implements OnInit {
         ]
       ],
       estudianteEmail: [
-        estudianteActual.email,
+        emailPorDefecto,
         [
           Validators.required,
           Validators.email,
@@ -132,70 +137,29 @@ export class SolicitudForm implements OnInit {
         ]
       ]
     });
-
-    // Vinculación inicial con los datos del alumno actual
-    this.actualizarEstudiantePorCodigo(estudianteActual.codigo);
-
-    // Escucha reactiva al cambiar el código para vincular datos del alumno
-    this.solicitudForm.get('estudianteCodigo')?.valueChanges.subscribe((cod: string) => {
-      this.actualizarEstudiantePorCodigo(cod);
-    });
   }
 
-  /**
-   * Vincula automáticamente los datos del alumno en función de su código
-   */
-  private actualizarEstudiantePorCodigo(codigo: string): void {
-    if (!codigo) {
-      this.estudianteDetectado.set(null);
-      return;
-    }
-    const encontrado = this.solicitudesService.buscarEstudiantePorCodigo(codigo);
-    if (encontrado) {
-      this.estudianteDetectado.set(encontrado);
-      const emailCtrl = this.solicitudForm.get('estudianteEmail');
-      // Si el email está vacío o no ha sido modificado manualmente, auto-rellenar con el correo institucional
-      if (emailCtrl && (!emailCtrl.value || emailCtrl.pristine)) {
-        emailCtrl.setValue(encontrado.email);
-      }
-    } else {
-      this.estudianteDetectado.set(null);
-    }
+  // Getter para facilitar validaciones en la plantilla
+  public get f() {
+    return this.solicitudForm?.controls ?? {};
   }
 
-  // Getters para facilitar validaciones en la plantilla (Recursos ES6+)
-  get f() {
-    return this.solicitudForm.controls;
+  public get conteoCaracteres(): number {
+    return this.solicitudForm?.get('justificacion')?.value?.length ?? 0;
   }
 
-  get justificacionControl(): AbstractControl | null {
-    return this.solicitudForm.get('justificacion');
-  }
-
-  get conteoCaracteres(): number {
-    return this.justificacionControl?.value?.length ?? 0;
-  }
-
-  /**
-   * Helper para verificar si un control tiene error y ha sido tocado
-   */
-  esInvalido(nombreCampo: string): boolean {
-    const control = this.solicitudForm.get(nombreCampo);
+  public esInvalido(nombreCampo: string): boolean {
+    const control = this.solicitudForm?.get(nombreCampo);
     return !!(control && control.invalid && (control.dirty || control.touched));
   }
 
-  /**
-   * Helper para verificar si un control es válido y ha sido tocado
-   */
-  esValido(nombreCampo: string): boolean {
-    const control = this.solicitudForm.get(nombreCampo);
+  public esValido(nombreCampo: string): boolean {
+    const control = this.solicitudForm?.get(nombreCampo);
     return !!(control && control.valid && (control.dirty || control.touched));
   }
 
-  /**
-   * Carga un escenario de prueba con datos completamente VÁLIDOS
-   */
-  cargarCasoValido(): void {
+  public cargarCasoValido(): void {
+    if (!this.solicitudForm) return;
     this.solicitudForm.patchValue({
       tipoTramite: 'Revisión de Calificación Final',
       descripcionDetalle: 'Corte 3 • Revisión de rúbrica evaluación continua',
@@ -203,61 +167,49 @@ export class SolicitudForm implements OnInit {
       estudianteEmail: 'valeria.restrepo@isil.pe',
       justificacion: 'Solicito formalmente la revisión del entregable final de arquitectura debido a que el porcentaje de despliegue en AWS cumple con todos los criterios exigidos en la rúbrica.'
     });
-    this.actualizarEstudiantePorCodigo('ISIL-742910');
     this.solicitudForm.markAllAsTouched();
     this.mensajeExito.set(null);
+    this.mensajeError.set(null);
   }
 
-  /**
-   * Carga un escenario de prueba con datos INVÁLIDOS para evidenciar los mensajes de error
-   */
-  cargarCasoInvalido(): void {
+  public cargarCasoInvalido(): void {
+    if (!this.solicitudForm) return;
     this.solicitudForm.patchValue({
       tipoTramite: '',
-      descripcionDetalle: 'Ab', // Muy corto (< 5)
-      estudianteCodigo: 'ABC-12', // Patrón erróneo
-      estudianteEmail: 'correo-no-valido', // Email inválido
-      justificacion: 'Pocos caracteres' // Muy corto (< 20)
+      descripcionDetalle: 'Ab',
+      estudianteCodigo: 'ABC-12',
+      estudianteEmail: 'correo-no-valido',
+      justificacion: 'Pocos caracteres'
     });
-    this.actualizarEstudiantePorCodigo('ABC-12');
     this.solicitudForm.markAllAsTouched();
     this.mensajeExito.set(null);
+    this.mensajeError.set(null);
   }
 
-  /**
-   * Limpia y reinicia el formulario
-   */
-  limpiarFormulario(): void {
-    const estudianteActual = this.solicitudesService.getEstudianteActual();
+  public limpiarFormulario(): void {
+    if (!this.solicitudForm) return;
     this.solicitudForm.reset({
       codigoRadicado: this.solicitudesService.generarProximoRadicado(),
       tipoTramite: '',
       descripcionDetalle: '',
-      estudianteCodigo: estudianteActual.codigo,
-      estudianteEmail: estudianteActual.email,
+      estudianteCodigo: '',
+      estudianteEmail: '',
       justificacion: ''
     });
-    this.actualizarEstudiantePorCodigo(estudianteActual.codigo);
     this.mensajeExito.set(null);
+    this.mensajeError.set(null);
   }
 
-  /**
-   * Envío del formulario reactivo
-   */
-  onSubmit(): void {
-    if (this.solicitudForm.invalid || this.guardando()) {
-      this.solicitudForm.markAllAsTouched();
+  public onSubmit(): void {
+    if (!this.solicitudForm || this.solicitudForm.invalid || this.guardando()) {
+      this.solicitudForm?.markAllAsTouched();
       return;
     }
 
-    // Uso de ES6+ Object destructuring
     const formValues = this.solicitudForm.getRawValue();
-    const alumno = this.estudianteDetectado();
-
     const dto: NuevaSolicitudDTO = {
       tipoTramite: formValues.tipoTramite,
       descripcionDetalle: formValues.descripcionDetalle,
-      estudianteNombre: alumno?.nombre,
       estudianteCodigo: formValues.estudianteCodigo,
       estudianteEmail: formValues.estudianteEmail,
       justificacion: formValues.justificacion,
@@ -265,20 +217,21 @@ export class SolicitudForm implements OnInit {
     };
 
     this.guardando.set(true);
+    this.mensajeError.set(null);
 
     this.solicitudesService.crearSolicitud(dto).subscribe({
       next: (nueva) => {
         this.guardando.set(false);
-        this.mensajeExito.set(`¡Solicitud ${nueva.codigoRadicado} radicada con éxito vía API REST! Redirigiendo a la bandeja...`);
-
-        // Redirección a la bandeja tras 1.5 segundos
+        this.mensajeExito.set(`¡Solicitud ${nueva.codigoRadicado} radicada con éxito! Redirigiendo a la bandeja...`);
         setTimeout(() => {
-          this.router.navigate(['/bandeja']);
+          this.router.navigateByUrl(homeForRole(this.authService.currentUser()?.rol));
         }, 1500);
       },
       error: (error) => {
         this.guardando.set(false);
         console.error('Error al registrar la solicitud:', error);
+        const mensaje = error?.error?.mensaje || error?.error?.error || error?.message || 'Error desconocido';
+        this.mensajeError.set(mensaje);
       }
     });
   }

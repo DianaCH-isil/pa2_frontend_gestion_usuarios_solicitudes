@@ -1,21 +1,20 @@
 <header class="top-header">
-  <!-- Títulos del Portal Académico -->
   <div class="header-titles">
     <h2 class="portal-main-title">Portal de Solicitudes Académicas</h2>
-
   </div>
 
-  <!-- Perfil del Estudiante Autenticado -->
-  <div class="user-profile-widget">
+  <div class="user-profile-widget" *ngIf="user() as u">
     <div class="user-info">
-      <span class="user-name">{{ estudiante.nombre }}</span>
+      <span class="user-name">{{ u.nombre }}</span>
+      <span class="user-role">{{ rol() }}</span>
     </div>
-
-    <div class="avatar-container">
-      <img [src]="estudiante.avatarUrl || 'user.png'" alt="Foto de perfil de {{ estudiante.nombre }}"
-        class="user-avatar-img" />
-      <!-- Indicador verde de estado en línea -->
-      <span class="online-indicator" title="Usuario activo en el portal"></span>
-    </div>
+    <button
+      type="button"
+      class="logout-btn"
+      (click)="cerrarSesion()"
+      title="Cerrar sesión"
+    >
+      Cerrar sesión
+    </button>
   </div>
 </header>

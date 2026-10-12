@@ -1,24 +1,21 @@
-# Plataforma de Gestión de Solicitudes Académicas
+# Plataforma de Gestión de Solicitudes Académicas — Frontend (PA1)
 
-**Curso:** Programación Web Avanzada · **Código:** 4060 · **Institución:** ISIL · **Periodo:** 202620
-**Evaluación:** PA1 
+**Curso:** Programación Web II · **Código:** 30690 · **Institución:** ISIL · **Periodo:** 202620
+**Evaluación:** PA1 (frontend) + PA2 (backend)
 
 ## Integrantes
 
 | Nombre completo | Rol | Participación |
 |---|---|---|
-| Diana Carolina Clabel Human | Desarrollo full-stack | Aporte equitativo en las cuatro actividades: tipos, componentes, formulario y consumo de API. |
-| Linder Aaron Pereyra Cabrejos | Desarrollo full-stack | Aporte equitativo en las cuatro actividades: tipos, componentes, formulario y consumo de API. |
-
-
+| Diana Carolina Clabel Huaman | Desarrollo full-stack | Desarrollo de componentes standalone  gestion-usuarios, estudiantes-registrados y consumo e integración de servicios REST con la API. |
 
 ## Descripción
 
 Aplicación web para radicar, consultar y dar seguimiento a solicitudes
 académicas de los estudiantes de ISIL. La interfaz está construida en
-**Angular** con tipado estricto en TypeScript y consume una **API REST
-propia** implementada en **Node.js + Express + TypeScript**, disponible
-en la carpeta `server/` del repositorio.
+**Angular 20** con tipado estricto en TypeScript y consume la **API REST
+Node.js + Express + MongoDB** del repositorio hermano
+`pa2_backend_gestion_usuarios_solicitudes`.
 
 ## Objetivo
 
@@ -27,118 +24,82 @@ componentes en Angular, formularios reactivos con validaciones y
 navegación entre rutas, y consumo de una API REST mediante `HttpClient`,
 manteniendo una solución modular con tipado estático riguroso.
 
-## Desarrollo
+## Stack
 
-El proyecto se construyó de manera incremental. Primero se definieron
-los tipos e interfaces del dominio (`SolicitudAcademica`, `Estudiante`,
-`NuevaSolicitudDTO`, `MetricasSolicitudes`), luego se montó la
-arquitectura de componentes standalone con su módulo de routing
-tradicional, después el formulario reactivo con sus validaciones
-personalizadas y finalmente el consumo de la API REST mediante
-`HttpClient` desde un servicio inyectado.
+- **Angular 20** (standalone components, Signals + RxJS).
+- **TypeScript** en modo `strict`.
+- **Reactive Forms** con validaciones built-in y personalizadas.
+- **HttpClient** para consumir la API del backend.
+- **MongoDB** en el backend (persistencia real desde la PA2).
 
-## Solución propuesta
-
-### Actividad 1: Base tipada y modular
-**Responsables:** Diana Carolina Clabel Human y Linder Aaron Pereyra Cabrejos
-
-**Cómo lo trabajamos**
-
-- Definimos los modelos en `src/app/models/solicitud.model.ts` y
-  `server/src/models/solicitud.model.ts` como **interfaces TypeScript**
-  (`SolicitudAcademica`, `Estudiante`, `NuevaSolicitudDTO`,
-  `MetricasSolicitudes`) y como **union types** los estados y las
-  categorías (`'Aprobada' | 'En Revisión' | 'Pendiente' | 'Rechazada'`).
-- Activamos `strict: true`, `strictTemplates`,
-  `noImplicitOverride`, `noPropertyAccessFromIndexSignature` y
-  `strictInputAccessModifiers` en `tsconfig.json` para que el compilador
-  rechace cualquier valor fuera del contrato antes de ejecutar.
-- Separamos la lógica en módulos por responsabilidad:
-  `models/`, `services/`, `components/`, `directives/` y
-  `server/src/{models,data}`.
-- Documentamos las decisiones de estructura en
-  [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) y los endpoints de la
-  API en [`docs/API.md`](docs/API.md).
-
-**Recursos de ES6+ empleados**
-
-Arrow functions, clases, template literals, destructuring, spread/rest,
-parámetros por defecto, encadenamiento opcional (`?.`), módulos
-`import`/`export` y los métodos funcionales de `Array`
-(`map`, `filter`, `reduce`, `find`, `findIndex`).
-
-### Actividad 2: Arquitectura de componentes Angular
-**Responsables:** Diana Carolina Clabel Human y Linder Aaron Pereyra Cabrejos
-
-**Cómo lo trabajamos**
-
-- Generamos seis componentes con Angular CLI: `Header`, `Sidebar`,
-  `Footer`, `SolicitudesList`, `SolicitudForm` y
-  `SolicitudDetalleModal`, todos declarados como **standalone** para
-  aprovechar la carga diferida natural de Angular 20.
-- Creamos la directiva `StatusBadgeDirective` con `@Input` y
-  `Renderer2` para aplicar clases CSS según el estado de la solicitud,
-  aislando la lógica visual del componente que muestra los datos.
-- Implementamos `SolicitudesService` como `@Injectable({
-  providedIn: 'root' })` para tener una única instancia compartida
-  (singleton) accesible vía `inject(SolicitudesService)` desde cualquier
-  componente.
-- Construimos `AppRoutingModule` con `RouterModule.forRoot(routes)`
-  para mantener el patrón clásico de routing además de
-  `provideRouter(routes)`, que sigue funcionando en paralelo.
-- Aplicamos data binding en sus cuatro formas: interpolación
-  (`{{ solicitud.codigoRadicado }}`), property binding
-  (`[appStatusBadge]="solicitud.estado"`), event binding
-  (`(click)="abrirDetalle(solicitud)"`) y directivas estructurales
-  (`*ngFor`, `*ngIf`).
-
-**Estructura**
+## Estructura del proyecto
 
 ```
-src/app/
-├── app.ts / app.html / app.scss
-├── app.config.ts
-├── app.routes.ts
-├── app-routing.module.ts
-├── components/
-│   ├── header/
-│   ├── sidebar/
-│   ├── footer/
-│   ├── solicitudes-list/
-│   ├── solicitud-form/
-│   └── solicitud-detalle-modal/
-├── directives/
-│   └── status-badge.directive.ts
-├── models/
-│   └── solicitud.model.ts
-└── services/
-    └── solicitudes.service.ts
+pa2_frontend_gestion_usuarios_solicitudes/
+├── public/                       # Recursos estáticos
+│   ├── favicon.ico
+│   ├── logo.png
+│   └── user.png
+├── src/                          # Frontend Angular
+│   ├── index.html
+│   ├── main.ts
+│   ├── styles.scss
+│   └── app/
+│       ├── app.ts / app.html / app.scss
+│       ├── app.config.ts
+│       ├── app.routes.ts
+│       ├── app-routing.module.ts
+│       ├── components/
+│       │   ├── header/
+│       │   ├── sidebar/
+│       │   ├── footer/
+│       │   ├── solicitudes-list/
+│       │   ├── solicitud-form/
+│       │   └── solicitud-detalle-modal/
+│       ├── directives/
+│       │   └── status-badge.directive.ts
+│       ├── models/
+│       │   └── solicitud.model.ts
+│       └── services/
+│           └── solicitudes.service.ts
+├── angular.json
+├── package.json
+├── package-lock.json
+├── tsconfig.json / tsconfig.app.json / tsconfig.spec.json
+└── README.md
 ```
 
-### Actividad 3: Formulario reactivo, validaciones y navegación
-**Responsables:** Diana Carolina Clabel Human y Linder Aaron Pereyra Cabrejos
+## Desarrollo por actividad
 
-**Cómo lo trabajamos**
+### Actividad 1 — Base tipada y modular
+- Modelos en `src/app/models/solicitud.model.ts` con **interfaces**
+  TypeScript (`SolicitudAcademica`, `Estudiante`, `NuevaSolicitudDTO`,
+  `MetricasSolicitudes`) y **union types** para los estados y categorías.
+- `strict: true`, `strictTemplates`, `noImplicitOverride`,
+  `noPropertyAccessFromIndexSignature` y
+  `strictInputAccessModifiers` activados.
+- Separación en módulos: `models/`, `services/`, `components/`,
+  `directives/`.
 
-- Habilitamos `ReactiveFormsModule` y `FormBuilder` en
-  `SolicitudForm` para construir el `FormGroup` con sus validaciones
-  declaradas en `ngOnInit`.
-- Aplicamos los validadores built-in (`required`, `minLength`,
-  `maxLength`, `pattern`, `email`, `requiredTrue`) según el campo y
-  agregamos dos **validadores personalizados**:
-  - `validadorCorreoInstitucional`: restringe el dominio del correo a
-    `@isil.pe` o `@isil.edu.pe`.
-  - `validadorSinEspaciosVacios`: rechaza cadenas que contengan sólo
-    espacios.
-- Configuramos las rutas en `app.routes.ts` y `AppRoutingModule` con
-  tres destinos: `''` redirige a `'bandeja'`, `'bandeja'` carga
-  `SolicitudesList`, `'nueva-solicitud'` carga `SolicitudForm` y
-  `'**'` redirige a `'bandeja'` como catch-all.
-- Tras el envío exitoso, `SolicitudForm` redirige a `/bandeja`
-  con `router.navigate` para mostrar la solicitud recién creada.
-- Implementamos dos botones auxiliares en el formulario
-  (`Cargar caso válido` / `Cargar caso inválido`) que demuestran el
-  comportamiento de cada regla de validación al ser ejecutados.
+### Actividad 2 — Arquitectura de componentes Angular
+- Componentes **standalone**: `Header`, `Sidebar`, `Footer`,
+  `SolicitudesList`, `SolicitudForm`, `SolicitudDetalleModal`.
+- Directiva `StatusBadgeDirective` con `@Input` y `Renderer2` para
+  aplicar clases CSS según el estado de la solicitud.
+- `SolicitudesService` como `@Injectable({ providedIn: 'root' })`.
+- Routing dual: `AppRoutingModule` (NgModule clásico) y `provideRouter()`
+  en `app.config.ts`.
+- Data binding: interpolación, property binding, event binding y
+  directivas estructurales (`*ngFor`, `*ngIf`).
+
+### Actividad 3 — Formulario reactivo, validaciones y navegación
+- `ReactiveFormsModule` + `FormBuilder` en `SolicitudForm`.
+- Validadores built-in (`required`, `minLength`, `maxLength`, `pattern`,
+  `email`, `requiredTrue`) + dos validadores personalizados:
+  - `validadorCorreoInstitucional`: restringe a `@isil.pe` o `@isil.edu.pe`.
+  - `validadorSinEspaciosVacios`: rechaza cadenas con sólo espacios.
+- Rutas: `''` → `bandeja` (carga `SolicitudesList`), `nueva-solicitud`
+  (carga `SolicitudForm`), `**` → `bandeja`.
 
 **Validaciones del formulario**
 
@@ -150,93 +111,103 @@ src/app/
 | `estudianteEmail` | requerido, formato de correo, dominio `@isil.pe` o `@isil.edu.pe` |
 | `justificacion` | requerido, 20-500 caracteres, no sólo espacios |
 
-### Actividad 4: Consumo de una API REST desde Angular
-**Responsables:** Diana Carolina Clabel Human y Linder Aaron Pereyra Cabrejos
-
-**Cómo lo trabajamos**
-
-- Registramos `provideHttpClient(withFetch())` en `app.config.ts` para
-  habilitar el cliente HTTP global.
-- Centralizamos todas las llamadas en `SolicitudesService` mediante
-  `inject(HttpClient)`, exponiendo:
+### Actividad 4 — Consumo de una API REST desde Angular
+- `provideHttpClient(withFetch())` en `app.config.ts`.
+- Todas las llamadas pasan por `SolicitudesService`:
   - `cargarSolicitudes()` → `GET /api/solicitudes`.
   - `crearSolicitud(dto)` → `POST /api/solicitudes`.
-  - `actualizarEstado(id, estado)` →
-    `PATCH /api/solicitudes/:id/estado`.
-- Implementamos la **API REST propia** en `server/src/server.ts` con
-  Express y TypeScript. Los endpoints devuelven JSON y validan los
-  datos en el servidor (código de respuesta 400 para entradas
-  incompletas y 404 cuando el id no existe).
-- Persistimos las solicitudes en un repositorio en memoria poblado
-  desde `server/src/data/initial-data.ts` (6 solicitudes de ejemplo).
-- Incorporamos un **fallback offline** en el servicio: si la API no
-  responde, los componentes siguen mostrando los datos locales sin
-  romper la navegación.
+  - `actualizarEstado(id, estado)` → `PATCH /api/solicitudes/:id/estado`.
+- **Fallback offline** integrado: si la API no responde, los componentes
+  siguen mostrando los datos locales sin romper la navegación.
 
-**Estructura del backend**
+## Backend 
 
-```
-server/
-├── src/
-│   ├── server.ts                 # Express + endpoints REST
-│   ├── models/solicitud.model.ts # Tipos compartidos
-│   └── data/initial-data.ts      # Datos de ejemplo
-├── dist/                         # generado por build:server
-└── tsconfig.server.json          # target ES2022, strict: true
-```
+El backend que consume este frontend vive en su propio repositorio:
 
-**Endpoints disponibles**
+- **Ruta:** `pa2_backend_gestion_usuarios_solicitudes`
+- **Stack:** Node.js · Express 5 · MongoDB · Mongoose · JWT · bcryptjs · helmet · cors · morgan
+- **Persistencia:** MongoDB (no más almacenamiento en memoria).
+- **Auth:** JWT con middlewares `verificarToken` y `verificarRol`.
+- **Seed automático** al arrancar: 8 usuarios, 4 estudiantes y 6
+  solicitudes (todas las contraseñas son `123`).
+- **Credenciales del seed:**
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| GET | `/api/health` | Estado del servicio |
-| GET | `/api/solicitudes` | Listado (acepta filtros) |
-| GET | `/api/solicitudes/:id` | Búsqueda por id o radicado |
-| POST | `/api/solicitudes` | Registra una solicitud |
-| PATCH | `/api/solicitudes/:id/estado` | Actualiza el estado |
-| GET | `/api/estudiantes` | Listado de estudiantes |
-| GET | `/api/estudiantes/:codigo` | Búsqueda por código |
-| GET | `/api/metricas` | Métricas agregadas |
+  | Rol | Correo | Contraseña |
+  |---|---|---|
+  | Administrador | `admin@isil.pe` | `123` |
+  | Personal | `personal@isil.pe` | `123` |
+  | Estudiante (Diana) | `diana@isil.pe` | `123` |
+  | Estudiante (Linder) | `linder@isil.pe` | `123` |
+  | Estudiante (Valeria) | `valeria@isil.pe` | `123` |
+  | Estudiante (Carlos) | `carlos@isil.pe` | `123` |
+  | Estudiante (Andrea) | `andrea@isil.pe` | `123` |
+  | Estudiante (Mateo) | `mateo@isil.pe` | `123` |
+
+  Estas credenciales son exclusivamente del ambiente de desarrollo del
+  seed y **no deben usarse en producción**.
+
+- **URL base esperada:** `http://localhost:3000/api`.
+- **Contrato completo:** ver `docs/API.md` de este repositorio y
+  `docs/API.md` del backend.
 
 ## Cómo ejecutar o revisar
 
 ### Requisitos
-
-- Node.js 18.x o superior.
+- Node.js 18.x o superior (recomendado 20 LTS).
 - npm 9.x o superior.
+- (Para el backend) MongoDB 6.x o superior.
 
-### Instalación
+### 1. Instalar dependencias del frontend
 
 ```bash
 npm install
 ```
 
-### Compilar y levantar el backend (API REST)
+### 2. Levantar el backend
+
+En otra terminal, dentro del repo del backend:
 
 ```bash
-npm run build:server   # compila TypeScript → server/dist/
-npm run server         
+cd ../pa2_backend_gestion_usuarios_solicitudes
+npm install
+npm run dev        # o npm start
 ```
 
-### Levantar el frontend Angular
+Al arrancar, el backend conecta a MongoDB y, si la BD está vacía, siembra
+los datos de ejemplo.
 
-En otra terminal:
+### 3. Levantar el frontend
 
 ```bash
-npm start              # abre http://localhost:4200
+npm start
 ```
 
+Abre `http://localhost:4200`. La app se conecta automáticamente a
+`http://localhost:3000/api`. Si el backend no responde, el servicio
+aplica el **fallback offline** y muestra los datos locales.
 
-
-### Verificar la compilación estricta
+### 4. Verificar la compilación estricta
 
 ```bash
 npx ng build --configuration development
-npx tsc --noEmit -p server/tsconfig.server.json
 ```
 
-Si no imprime errores, el tipado estático es correcto en ambos
-procesos.
+Si no imprime errores, el tipado estático es correcto.
+
+## Configuración de la URL del backend
+
+`SolicitudesService` define la URL base como constante:
+
+```ts
+public readonly apiUrl = 'http://localhost:3000/api';
+```
+
+Para apuntar a otro entorno (staging, producción, IP de un compañero,
+etc.) basta con cambiar esa línea en
+`src/app/services/solicitudes.service.ts`. Todas las rutas cuelgan de
+`apiUrl`, así que un solo cambio cubre GET/POST/PATCH de solicitudes y
+los futuros endpoints autenticados (`/api/auth/login`,
+`/api/auth/me`).
 
 ## Evidencias
 
@@ -252,45 +223,40 @@ Las capturas de pantalla están guardadas en
 
 ## Matriz de participación
 
-| Integrante | Desarrollo | Pruebas | Documentación | Exposición | Evidencia de participación |
+| Integrante | Desarrollo | Pruebas | Documentación | Exposición | Evidencia |
 |---|---|---|---|---|---|
-| Diana Carolina Clabel Human | Alta | Alta | Alta | Sí | Commits en el repositorio, capturas adjuntas y exposición del trabajo realizado. |
-| Linder Aaron Pereyra Cabrejos | Alta | Alta | Alta | Sí | Commits en el repositorio, capturas adjuntas y exposición del trabajo realizado. |
+| Diana Carolina Clabel Human | Alta | Alta | Alta | Sí | Commits, capturas y exposición. |
 
-> La participación de ambos integrantes fue equitativa en las cuatro
-> actividades de la evaluación.
+
+
 
 ## Conclusiones
 
 - **Actividad 1:** Definir los tipos e interfaces antes de construir los
   componentes permitió que TypeScript detectara cualquier inconsistencia
   entre el modelo del frontend y el contrato de la API REST durante la
-  compilación, evitando errores en tiempo de ejecución. El modo
-  `strict` y los union types garantizan que sólo valores válidos lleguen
-  al formulario y a la API.
-- **Actividad 2:** La separación entre componentes (presentación) y el
-  servicio inyectado (lógica de datos) mantuvo las vistas limpias y
-  permitió reutilizar `SolicitudesService` desde cualquier componente
-  sin duplicar código. La directiva `StatusBadgeDirective` aisló la
-  lógica visual del badge de estado del componente que muestra los
-  datos.
-- **Actividad 3:** El formulario reactivo con validadores
-  personalizados (correo institucional, código de estudiante, longitud
-  de justificación) demostró ser más mantenible que las validaciones
-  dispersas en el HTML. Las rutas configuradas en `AppRoutingModule`
-  organizaron la navegación entre la bandeja y el formulario.
-- **Actividad 4:** Consumir la API REST desde `SolicitudesService` con
-  `HttpClient` desacopló la vista del origen de los datos. La API
-  escrita en TypeScript con Express mantiene el mismo modelo del
-  frontend y permite que cualquier cambio en el contrato se detecte al
-  compilar.
+  compilación.
+- **Actividad 2:** La separación entre componentes y el servicio
+  inyectado mantuvo las vistas limpias y permitió reutilizar
+  `SolicitudesService` desde cualquier componente sin duplicar código.
+- **Actividad 3:** El formulario reactivo con validadores personalizados
+  demostró ser más mantenible que validaciones dispersas en el HTML.
+- **Actividad 4:** Consumir la API REST con `HttpClient` desacopló la
+  vista del origen de los datos. **En la PA2** ese origen pasó de ser
+  un repositorio en memoria a **MongoDB** real, sin necesidad de
+  modificar el frontend (más allá de la URL del servicio).
 - **General:** La estructura modular (models, services, components,
   directives) facilitó la lectura del código y la incorporación de
-  mejoras visuales sin afectar la lógica de negocio. El equipo pudo
-  iterar sobre el estilo (degradando gradualmente a una apariencia más
-  sencilla tipo estudiante) sin romper ninguna funcionalidad.
+  mejoras sin afectar la lógica de negocio.
 
-## Video de exposición
+## Video de exposición (PA1)
 
-**Video público de YouTube:** 
-Link del video en youtube: https://youtu.be/Kfo5Ma2AcPE
+**Video público de YouTube (PA2):** 
+
+> La exposición de la **PA2** (backend) se publica en el README del
+> repositorio del backend.
+
+## Repositorios
+
+- **Frontend (este repo):** `pa2_frontend_gestion_usuarios_solicitudes`
+- **Backend (repositorio hermano):** `pa2_backend_gestion_usuarios_solicitudes`

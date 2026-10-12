@@ -1,0 +1,112 @@
+<section class="estudiantes-section">
+  <div class="list-card">
+    <div class="list-card-header">
+      <h3 class="list-title">Estudiantes registrados</h3>
+    </div>
+
+    <p *ngIf="mensajeExito()" class="action-feedback action-feedback--ok">{{ mensajeExito() }}</p>
+    <p *ngIf="mensajeAccionError()" class="action-feedback action-feedback--error">{{ mensajeAccionError() }}</p>
+    <p *ngIf="mensajeError()" class="error-banner">{{ mensajeError() }}</p>
+    <p *ngIf="cargando()" class="loading-text">Cargando estudiantes…</p>
+
+    <div class="table-responsive" *ngIf="!cargando()">
+      <table class="estudiantes-table">
+        <thead>
+          <tr>
+            <th>CÓDIGO</th>
+            <th>NOMBRE</th>
+            <th>CARRERA</th>
+            <th>EMAIL</th>
+            <th class="col-acciones">ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of estudiantes()" class="table-row">
+            <td><strong>{{ e.codigo }}</strong></td>
+            <td>{{ e.nombre }}</td>
+            <td>{{ e.carrera }}</td>
+            <td>{{ e.email }}</td>
+            <td class="col-acciones">
+              <div class="detalle-actions">
+                <button
+                  type="button"
+                  class="detail-action-btn detail-action-btn--secondary"
+                  (click)="abrirModificar(e)"
+                  title="Modificar {{ e.codigo }}"
+                >
+                  Modificar
+                </button>
+                <button
+                  type="button"
+                  class="detail-action-btn detail-action-btn--danger"
+                  (click)="eliminarEstudiante(e)"
+                  [disabled]="eliminandoId() === e.id"
+                  title="Eliminar {{ e.codigo }}"
+                >
+                  {{ eliminandoId() === e.id ? 'Eliminando…' : 'Eliminar' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="estudiantes().length === 0">
+            <td colspan="5" class="empty-row">No hay estudiantes registrados.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div
+  *ngIf="estudianteEnEdicion() as est"
+  class="detalle-modal-backdrop"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modificar-estudiante-titulo"
+  (click)="cerrarModificar()"
+>
+  <div class="detalle-modal detalle-modal--compact" (click)="$event.stopPropagation()">
+    <div class="detalle-modal-header">
+      <h4 class="detalle-modal-title" id="modificar-estudiante-titulo">Modificar estudiante</h4>
+      <button type="button" class="detalle-modal-close" (click)="cerrarModificar()" aria-label="Cerrar">
+        &times;
+      </button>
+    </div>
+
+    <form [formGroup]="editarForm" (ngSubmit)="guardarModificacion()" class="detalle-modal-body">
+      <p class="readonly-meta"><strong>Código:</strong> {{ est.codigo }}</p>
+      <p class="readonly-meta"><strong>Email:</strong> {{ est.email }}</p>
+
+      <div class="form-group">
+        <label class="form-label" for="edit-nombre">Nombre</label>
+        <input
+          id="edit-nombre"
+          class="form-control"
+          formControlName="nombre"
+          [class.has-error]="esInvalido('nombre')"
+        />
+        <div *ngIf="esInvalido('nombre')" class="error-feedback">El nombre es obligatorio (mín. 3 caracteres).</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="edit-carrera">Carrera</label>
+        <input
+          id="edit-carrera"
+          class="form-control"
+          formControlName="carrera"
+          [class.has-error]="esInvalido('carrera')"
+        />
+        <div *ngIf="esInvalido('carrera')" class="error-feedback">La carrera es obligatoria.</div>
+      </div>
+
+      <div class="detalle-modal-footer">
+        <button type="button" class="detalle-modal-btn detalle-modal-btn--muted" (click)="cerrarModificar()" [disabled]="guardando()">
+          Cancelar
+        </button>
+        <button type="submit" class="detalle-modal-btn" [disabled]="editarForm.invalid || guardando()">
+          {{ guardando() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

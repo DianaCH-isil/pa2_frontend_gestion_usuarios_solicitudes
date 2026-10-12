@@ -1,4 +1,9 @@
 <section class="form-section">
+  <!-- Banner de error de inicialización (visible si ngOnInit falló) -->
+  <div *ngIf="errorCarga() as err" class="init-error">
+    <strong>⚠ Error al cargar el formulario:</strong> {{ err }}
+  </div>
+
   <!-- Tarjeta Contenedora -->
   <div class="form-card">
     <!-- Cabecera del Formulario -->
@@ -9,7 +14,7 @@
     </div>
 
     <!-- Formulario Reactivo -->
-    <form [formGroup]="solicitudForm" (ngSubmit)="onSubmit()" class="reactive-form" novalidate>
+    <form *ngIf="solicitudForm" [formGroup]="solicitudForm" (ngSubmit)="onSubmit()" class="reactive-form" novalidate>
 
       <div class="form-row">
 
@@ -152,5 +157,10 @@
 
     <!-- Mensaje de éxito (parte inferior) -->
     <p *ngIf="mensajeExito()" class="success-message">Solicitud hecha!</p>
+
+    <!-- Mensaje de error devuelto por el backend -->
+    <p *ngIf="mensajeError()" class="error-banner">
+      ⚠ {{ mensajeError() }}
+    </p>
   </div>
 </section>

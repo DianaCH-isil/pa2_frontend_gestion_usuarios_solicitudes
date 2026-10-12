@@ -3,6 +3,24 @@
   border: none;
 }
 
+.init-error {
+  margin: 0 0 12px 0;
+  padding: 10px 14px;
+  background-color: #fef2f2;
+  border: 1px solid #dc2626;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.init-info {
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
 .form-card-header {
   margin-bottom: 16px;
 
@@ -23,6 +41,17 @@
   font-weight: 600;
   border: none;
   background: transparent;
+}
+
+.error-banner {
+  margin: 12px 0 0 0;
+  padding: 8px 12px;
+  text-align: left;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid #dc2626;
+  background-color: #fef2f2;
 }
 
 .reactive-form {
